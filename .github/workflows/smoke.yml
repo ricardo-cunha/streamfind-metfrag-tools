@@ -20,19 +20,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out wrapper
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
       - name: Set up Python for JSON validation
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
       - name: Check out MetFrag source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ipb-halle/MetFragRelaunched
           ref: 2c8671b4d8d29b05ca9461e1238c2e4268ce9e21
@@ -49,7 +49,7 @@ jobs:
           jar="metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar"
           while IFS='|' read -r smiles depth; do
             java -jar "$jar" --smiles "$smiles" --depth "$depth" |
-              python -c 'import json,sys; d=json.load(sys.stdin); assert d["schema_version"] == 1; assert d["fragments"]; assert all(isinstance(f["smiles"], str) and f["smiles"] for f in d["fragments"]); assert all(f["depth"] <= d["requested_depth"] and f["exact_mass"] > 0 for f in d["fragments"]); print("validated", len(d["fragments"]), "fragments for", d["input_smiles"])'
+              python -c 'import json,sys; d=json.load(sys.stdin); assert d["schema_version"] == 1; assert d["fragments"]; assert all(isinstance(f["smiles"], str) and f["smiles"] and isinstance(f["formula"], str) and f["formula"] and isinstance(f["atom_indices"], list) and isinstance(f["broken_bond_indices"], list) and f["parent_id"] is None and f["neutral_losses"] is None for f in d["fragments"]); assert all(f["depth"] <= d["requested_depth"] and f["exact_mass"] > 0 for f in d["fragments"]); assert d["relationship_status"].startswith("unavailable"); print("validated", len(d["fragments"]), "fragments for", d["input_smiles"])'
           done <<'MOLECULES'
           CCO|1
           CC(=O)Oc1ccccc1C(=O)O|2
