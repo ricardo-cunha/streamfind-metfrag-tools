@@ -38,13 +38,13 @@ That license statement resolves the basic MetFrag license identification. It doe
 - CycloneDX Maven Plugin for the runtime SBOM
 - GitHub Actions for Ubuntu and Windows build/run checks
 
-The executable JAR is built locally/in CI but is not published. Remaining distribution work is the LGPL source/relink package and full dependency notice audit.
+A draft v0.1.0 release is attached in this repository and is not published. It includes the executable JAR, the pinned MetFragRelaunched source and wrapper build materials for relinking, collected dependency license/notice files, the runtime SBOM, and checksums. The full component-by-component dependency license/notice audit remains outstanding; review it before publishing.
 
 ## Remaining validation
 
 1. Validate precursor-relative atom/bond indices and SMILES round trips on additional molecules.
 2. Review the uploaded CycloneDX runtime SBOM against component license texts and preserve required notices.
-3. Prepare a package that satisfies applicable LGPL source and relinking/library-replacement conditions.
+3. Review the draft source/relink archive and validate its LGPL source and relinking materials; complete the component-level dependency license/notice audit before publication.
 
 ## Source references
 
