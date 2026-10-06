@@ -27,7 +27,7 @@ mvn clean package
 java -jar target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar --smiles "CCO" --depth 2
 ```
 
-The shaded jar is a local build output only. Do not publish it until upstream redistribution terms and every bundled dependency's license obligations are confirmed.
+A draft v0.1.0 release contains the self-contained JAR and a companion source/relink archive with the pinned MetFragRelaunched source, wrapper build materials, runtime SBOM, collected license/notice files, and checksums. The draft is not published while the component-by-component dependency license/notice audit is completed.
 
 ## JSON fields
 
@@ -41,4 +41,4 @@ Errors are JSON on standard output and return exit code 1; invalid CLI arguments
 
 ## Validation
 
-The [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions) builds/runs the CLI, checks parent references and JSON schema for ethanol, aspirin, vanillin, and metoprolol, and uploads a CycloneDX SBOM for runtime dependencies. The JAR is not distributed while licensing review remains incomplete. The latest run is linked from the repository README.
+The [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions) builds/runs the CLI, checks parent references and JSON schema for ethanol, aspirin, vanillin, and metoprolol, and uploads a CycloneDX SBOM for runtime dependencies. A draft release contains the JAR and companion source/relink archive; it remains unpublished while the licensing review is completed. The latest run is linked from the repository README.
