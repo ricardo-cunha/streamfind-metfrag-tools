@@ -110,7 +110,7 @@ jobs:
         working-directory: streamfind-metfrag-tools
         run: |
           release_tag="v${RELEASE_VERSION}"
-          notes="Draft release for review. Includes the self-contained CLI JAR, companion source/relink archive for the pinned MetFragLib version, runtime SBOM, third-party notices, and SHA-256 checksums. The source archive carries MetFragLib source and wrapper build materials. The component-by-component dependency license/notice audit remains incomplete; do not publish until it is finished."
+          notes="MetFrag Fragmenter v${RELEASE_VERSION} provides the self-contained CLI JAR and companion source/relink archive for the pinned MetFragLib version. Requires Java 21, which is not bundled. CI smoke tests passed on Ubuntu and Windows. The source archive includes MetFragLib source, wrapper build materials, CycloneDX runtime SBOM, collected dependency license/notice files, and checksums. MetFragLib is identified as LGPL-2.1-or-later by its official project page; its SBOM license field is unspecified. See THIRD_PARTY_NOTICES.md for the runtime inventory and distribution notes."
           assets=(
             "../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
             "../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}-source.zip"
