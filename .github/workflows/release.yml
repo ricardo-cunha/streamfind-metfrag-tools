@@ -1,0 +1,118 @@
+name: Build draft release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (without v)
+        required: true
+        default: '0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and attach draft assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out wrapper
+        uses: actions/checkout@v7
+        with:
+          path: streamfind-metfrag-tools
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Check out pinned MetFrag source
+        uses: actions/checkout@v7
+        with:
+          repository: ipb-halle/MetFragRelaunched
+          ref: 2c8671b4d8d29b05ca9461e1238c2e4268ce9e21
+          path: MetFragRelaunched
+      - name: Install MetFragLib locally
+        run: mvn -B clean install -pl MetFragLib -am -DskipTests
+        working-directory: MetFragRelaunched
+      - name: Build executable JAR and SBOM
+        run: |
+          mvn -B clean package org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom
+        working-directory: streamfind-metfrag-tools/metfrag-tools
+      - name: Smoke-test metoprolol
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -jar streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar \
+            --smiles 'CC(C)NCC(COC1=CC=C(C=C1)CCOC)O' --depth 1 |
+            python -c 'import json,sys; d=json.load(sys.stdin); assert d["fragments"] and d["fragments"][0]["formula"] == "C15H25NO3"; assert all(f["exact_mass"] > 0 for f in d["fragments"]); print("Validated metoprolol:", len(d["fragments"]), "fragments")'
+      - name: Assemble JAR and companion source package
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/source/streamfind-metfrag-tools dist/source/MetFragRelaunched dist/source/licenses
+          cp streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar "dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
+          cp streamfind-metfrag-tools/LICENSE streamfind-metfrag-tools/README.md streamfind-metfrag-tools/THIRD_PARTY_NOTICES.md dist/source/streamfind-metfrag-tools/
+          cp -R streamfind-metfrag-tools/metfrag-tools dist/source/streamfind-metfrag-tools/
+          rm -rf dist/source/streamfind-metfrag-tools/metfrag-tools/target
+          git -C MetFragRelaunched archive 2c8671b4d8d29b05ca9461e1238c2e4268ce9e21 | tar -x -C dist/source/MetFragRelaunched
+          cp streamfind-metfrag-tools/metfrag-tools/target/bom.json dist/source/
+          cp streamfind-metfrag-tools/THIRD_PARTY_NOTICES.md dist/
+          curl --fail --location --silent --show-error https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt -o dist/source/licenses/LGPL-2.1.txt
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import re, shutil
+          root = Path.home() / ".m2" / "repository"
+          out = Path("dist/source/licenses/dependencies")
+          out.mkdir(parents=True, exist_ok=True)
+          count = 0
+          for jar in root.rglob("*.jar"):
+              try:
+                  with ZipFile(jar) as archive:
+                      for name in archive.namelist():
+                          base = Path(name).name.upper()
+                          if name.upper().startswith("META-INF/") and (base.startswith(("LICENSE", "NOTICE", "COPYING", "COPYRIGHT")) or base.endswith((".LICENSE", ".NOTICE"))):
+                              data = archive.read(name)
+                              if not data or len(data) > 2_000_000:
+                                  continue
+                              target = out / f"{jar.parent.name}-{jar.stem}-{re.sub(r'[^A-Za-z0-9._-]+', '_', base)}"
+                              target.write_bytes(data)
+                              count += 1
+              except Exception as error:
+                  print(f"Could not inspect {jar}: {error}")
+          print(f"Collected {count} license/notice files from the Maven cache")
+          PY
+          cat > dist/source/RELINKING.md <<'EOF'
+          # Source and relinking materials
+          
+          This archive contains the wrapper source, the exact MetFragRelaunched source revision used for the executable, the resolved runtime SBOM, and license/notice files found in the build dependencies.
+          
+          To rebuild after modifying MetFragLib, install the modified library from the included MetFragRelaunched directory, then package the wrapper:
+          
+          ```sh
+          cd MetFragRelaunched
+          mvn -B clean install -pl MetFragLib -am -DskipTests
+          cd ../streamfind-metfrag-tools/metfrag-tools
+          mvn -B clean package
+          ```
+          
+          The executable is a shaded JAR. This source archive supplies the library source and the wrapper source/build description used to make a replacement executable. Review THIRD_PARTY_NOTICES.md and all license files for the full applicable terms.
+          EOF
+          (cd dist/source && zip -qr "../streamfind-metfrag-fragmenter-${RELEASE_VERSION}-source.zip" .)
+          sha256sum dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}-source.zip > dist/SHA256SUMS
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        working-directory: streamfind-metfrag-tools
+        run: |
+          gh release create "v${RELEASE_VERSION}" \
+            ../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar \
+            ../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}-source.zip \
+            ../dist/SHA256SUMS ../dist/THIRD_PARTY_NOTICES.md \
+            --draft --title "MetFrag Fragmenter v${RELEASE_VERSION}" \
+            --target "${GITHUB_SHA}" \
+            --notes "Draft release for review. Includes the self-contained CLI JAR, companion source/relink archive for the pinned MetFragLib version, runtime SBOM, third-party notices, and SHA-256 checksums. The source archive carries MetFragLib source and wrapper build materials. Complete the dependency-by-dependency license/notice audit before publishing this draft."
