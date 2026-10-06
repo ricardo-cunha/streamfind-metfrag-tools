@@ -29,12 +29,12 @@ The shaded jar is a local build output only. Do not publish it until upstream re
 
 - `schema_version`, `input_smiles`, `requested_depth`, and `fragmentation_method`
 - `fragments[]`: MetFrag fragment `id`, `smiles`, `formula`, neutral monoisotopic `exact_mass`, and `depth`
-- `atom_indices` and `broken_bond_indices`: precursor-relative MetFrag indices; index mapping still needs runtime validation
+- `atom_indices` and `broken_bond_indices`: precursor-relative MetFrag indices; atom and bond index mapping still needs validation against input ordering
 - `parent_id` is `null` and `parent_link_status` reports unavailable because the public fragment-list API does not preserve parent links
 - `neutral_losses` is `null` and the top-level `neutral_loss_status` explains that the result API does not expose per-fragment loss provenance
 
 Errors are JSON on standard output and return exit code 1; invalid CLI arguments return exit code 2. `--help` prints usage.
 
-## Current validation state
+## Validation
 
-Source implementation is present. It has not been compiled or executed because this workstation has no Java or Maven installation and WSL is inaccessible. See the root [API spike](../API_SPIKE.md) for source findings.
+The latest [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions/runs/37425049329) built the JAR and ran three representative SMILES successfully on Ubuntu 24.04 and Windows latest. This workstation itself has no Java or Maven installation and WSL is inaccessible.
