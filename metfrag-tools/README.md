@@ -34,11 +34,11 @@ The shaded jar is a local build output only. Do not publish it until upstream re
 - `schema_version`, `input_smiles`, `requested_depth`, and `fragmentation_method`
 - `fragments[]`: MetFrag fragment `id`, `smiles`, `formula`, neutral monoisotopic `exact_mass`, and `depth`
 - `atom_indices` and `broken_bond_indices`: precursor-relative MetFrag indices; atom and bond index mapping still needs validation against input ordering
-- `parent_id` is `null` and `parent_link_status` reports unavailable because the public fragment-list API does not preserve parent links
-- `neutral_losses` is `null` and the top-level `neutral_loss_status` explains that the result API does not expose per-fragment loss provenance
+- `parent_id` is captured from the exact parent object whose per-depth API call generated the fragment
+- `neutral_losses` contains a detached fragment only when its atom mask exactly matches a MetFrag neutral-loss pattern; see the top-level `neutral_loss_status`
 
 Errors are JSON on standard output and return exit code 1; invalid CLI arguments return exit code 2. `--help` prints usage.
 
 ## Validation
 
-The [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions) builds the JAR and validates JSON for ethanol, aspirin, vanillin, and metoprolol. The latest run is linked from the repository README.
+The [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions) builds/runs the CLI, checks parent references and JSON schema for ethanol, aspirin, vanillin, and metoprolol, and uploads a CycloneDX SBOM for runtime dependencies. The JAR is not distributed while licensing review remains incomplete. The latest run is linked from the repository README.

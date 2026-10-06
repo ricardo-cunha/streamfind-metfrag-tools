@@ -15,15 +15,13 @@ The initial CLI source builds and runs successfully on Ubuntu 24.04 and Windows 
 - `DefaultBitArrayFragment` exposes atom, intact-bond, and broken-bond bit arrays. The top-down precursor tracks atoms and bonds from the parsed precursor structure. This appears sufficient to map atom/bond provenance to indices in the exact input molecule, subject to validating indexing and canonicalization.
 - The returned flat `FragmentList` is produced breadth-by-depth: the root is added first and generation loops from depth 1 through configured maximum depth.
 
-## What is not reliably exposed
+## Tree links and neutral losses now captured by the adapter
 
-### Parent-child relationships
+The returned flat `FragmentList` still has no authoritative parent edges: in the pinned `TopDownFragmenter` source, calls to `setPrecursorFragment` and `addChild` are commented out. However, both `TopDownFragmenter` and `TopDownNeutralLossFragmenter` expose `getFragmentsOfNextTreeDepth(parent)`. The CLI now performs the breadth-first walk itself and records which parent object produced each returned batch. This reports the actual generation call as `parent_id`, rather than inferring ancestry from atom overlap or mass. It is a MetFrag generation tree at the configured traversal depth, not a measured MS/MS tree.
 
-The public fragment interface contains ID and tree depth but no parent/child API. In `TopDownFragmenter`, the lines that would attach children to their precursor fragment are commented out. Therefore a flat result cannot be treated as an authoritative fragmentation tree. Parent edges might be inferred from atom/bond containment and depth in some cases, but ambiguity and duplicate fragments make these edges inferred data. The first JSON contract marks parent links unavailable rather than implying a true tree.
+The specialized `TopDownNeutralLossFragmenter` holds matched `BitArrayNeutralLoss` patterns in protected state. Each pattern exposes its atom mask and neutral-loss type; the pinned `NeutralLosses` catalogue provides its SMARTS and configured mass. The CLI subclasses the fragmenter only to read that state and emits a neutral-loss record when a detached child exactly equals one of those masks and its sibling completes the parent's atom set. The record includes the detached structure's SMILES, formula, exact mass, the matched SMARTS, and MetFrag's catalogue mass. This is deliberately limited to MetFrag's built-in pattern matches; it is not a complete chemical neutral-loss search.
 
-### Neutral-loss structures
-
-`TopDownNeutralLossFragmenter` internally detects matching neutral-loss atom masks and adapts molecular formulas during fragmentation. `BitArrayNeutralLoss` exposes a neutral-loss type, mass difference, hydrogen difference, and atom masks. However, these arrays are held in protected/internal state on the fragmenter and are not included in the returned `FragmentList`. The inspected public `IFragment` result does not expose a neutral-loss association. A later implementation could use this specialized fragmenter and an adapter, but loss provenance is not available from the ordinary returned fragment objects. The initial JSON therefore marks per-fragment neutral losses unavailable.
+The source confirms these capabilities, but runtime assertions and representative examples must still pass on Linux and Windows before calling the fields validated.
 
 ## License scope
 
@@ -41,10 +39,9 @@ The executable JAR is shaded locally for the CLI, but is not published. A comple
 
 ## Remaining validation
 
-1. Validate broken-bond index mapping against precursor atom/bond ordering and test SMILES round trips on additional molecules.
-2. Investigate whether parent edges can be inferred safely; never expose inferred edges as authoritative.
-3. Audit all bundled dependency licenses and notices before publishing any binary.
-4. Confirm MetFrag's redistribution terms with the upstream maintainers.
+1. Validate precursor-relative atom/bond indices and SMILES round trips on additional molecules.
+2. Review the uploaded CycloneDX runtime SBOM against component license texts and preserve required notices.
+3. Obtain authoritative MetFrag redistribution terms from the upstream maintainers before publishing any binary.
 
 ## Source references
 

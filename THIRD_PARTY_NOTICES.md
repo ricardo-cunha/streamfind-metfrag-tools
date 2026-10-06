@@ -2,22 +2,23 @@
 
 ## Project code
 
-The wrapper source and project-authored documentation are licensed under GPL-3.0-only; see [LICENSE](LICENSE). SPDX identifier: `GPL-3.0-only`.
+Original wrapper source and project-authored documentation use GPL-3.0-only; see [LICENSE](LICENSE). This declaration does not grant a license to MetFragLib or its dependencies.
 
-## Build and runtime components
+## Components and audit status
 
-| Component | Version / source | Use | License status |
+| Component | Version / source | Use | License / redistribution status |
 |---|---|---|---|
-| MetFragRelaunched / MetFragLib | 2.6.12-SNAPSHOT, commit `2c8671b4d8d29b05ca9461e1238c2e4268ce9e21` | Structural fragmentation engine; source build installed into the Maven local repository in CI | No license grant detected in the upstream repository metadata/tree at the inspected commit. A third-party Bioconda recipe labels it LGPL-2.1-or-later; this is not authoritative. Confirmation required before redistribution. |
-| Chemistry Development Kit (CDK) | 2.11, pulled transitively by MetFragLib | SMILES parsing, molecular structures, and chemistry routines used by MetFragLib | License and notices must be verified from the exact resolved artifacts before any bundled binary release. |
-| Eclipse Temurin JDK | 21 in CI | Compiles and runs the CLI | CI toolchain only; not copied into the JAR. |
-| Apache Maven | 3.8+ in upstream build instructions | Builds MetFragLib and the wrapper | Build tool only; not copied into the JAR. |
-| Maven Compiler Plugin | 3.13.0 | Compiles the wrapper | Build plugin. |
-| Maven Shade Plugin | 3.6.0 | Assembles the local executable JAR with runtime dependencies | Build plugin; shaded artifact is not published. |
-| GitHub Actions | checkout v7, setup-java v6, setup-python v7 | Linux/Windows build and smoke workflow | CI service/actions; not runtime dependencies. |
+| MetFragRelaunched / MetFragLib | 2.6.12-SNAPSHOT, commit `2c8671b4d8d29b05ca9461e1238c2e4268ce9e21` | Fragmentation engine, built from source in CI | No authoritative license grant found in repository metadata, source tree, or inspected POMs. Bioconda labels it LGPL-2.1-or-later, but that is not a grant from the copyright holder. Maintainer confirmation is still needed. |
+| CDK and other MetFrag transitive libraries | Resolved versions recorded in the CI CycloneDX SBOM artifact `runtime-sbom-<runner OS>` | Runtime libraries in the shaded local build | The SBOM records Maven license metadata where published; each component's authoritative license and notice obligations still require review before binary redistribution. |
+| Eclipse Temurin JDK | 21 in CI | Compile and runtime environment | CI toolchain; not copied into the JAR. |
+| Apache Maven | 3.8+ per upstream build instructions | Build tool | Not copied into the JAR. |
+| Maven Compiler Plugin | 3.13.0 | Compiles wrapper | Build-only plugin; not copied into the JAR. |
+| Maven Shade Plugin | 3.6.0 | Creates local executable JAR | Build-only plugin; not copied into the JAR. |
+| CycloneDX Maven Plugin | 2.9.3 | Produces runtime dependency SBOM in CI | Build-only plugin; not copied into the JAR. |
+| GitHub Actions and actions | checkout v7, setup-java v6, setup-python v7, upload-artifact v7.0.1 | CI build, validation, and SBOM retention | CI services/actions; not runtime dependencies. |
 
-MetFragLib declares multiple direct and transitive components beyond CDK. The exact shaded dependency set is produced by Maven for the pinned upstream commit and can change when the upstream revision changes. This table is an initial inventory, not a complete bill of materials or legal review.
+The CycloneDX SBOM is generated after MetFragLib is installed and the wrapper is packaged, so it inventories the resolved runtime graph used by Maven for the wrapper. License expressions in dependency metadata are discovery aids, not legal conclusions. The current audit is incomplete while MetFragLib's terms and the exact component notice obligations remain unconfirmed.
 
 ## Distribution status
 
-No executable JAR is attached to a release or otherwise published. Before publishing, confirm MetFragLib redistribution terms with its maintainers, generate the resolved dependency bill of materials, preserve required notices, and verify that the combined distribution terms permit the planned redistribution.
+The shaded JAR is built for private CI validation only. It is not attached to a release or made available for download. Do not publish it until MetFrag's redistribution terms are confirmed and every bundled runtime component has been checked for compatible terms and preserved notices.

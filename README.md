@@ -18,7 +18,7 @@ The CLI builds and runs on Ubuntu 24.04 and Windows with Java 21. CI includes et
 java -jar streamfind-metfrag-fragmenter.jar --smiles "CCO" --depth 2
 ```
 
-The CLI emits JSON on standard output, including fragment SMILES, formula, neutral monoisotopic mass, depth, and precursor-relative atom/broken-bond indices. Parent links and neutral-loss structures are marked unavailable because the public fragment results do not preserve those associations.
+The CLI emits JSON on standard output with fragment SMILES, formula, neutral monoisotopic mass, depth, atom/bond provenance, parent links captured during per-depth traversal, and only those neutral losses that match MetFrag's own atom-mask patterns. A CycloneDX SBOM for resolved runtime dependencies is generated in CI. The shaded JAR remains unpublished pending authoritative upstream licensing confirmation.
 
 ## Upstream
 

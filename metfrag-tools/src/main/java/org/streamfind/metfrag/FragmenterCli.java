@@ -2,17 +2,23 @@
 package org.streamfind.metfrag;
 
 import de.ipbhalle.metfraglib.candidate.TopDownPrecursorCandidate;
+import de.ipbhalle.metfraglib.FastBitArray;
+import de.ipbhalle.metfraglib.additionals.NeutralLosses;
+import de.ipbhalle.metfraglib.fragment.AbstractTopDownBitArrayFragment;
+import de.ipbhalle.metfraglib.fragment.BitArrayNeutralLoss;
 import de.ipbhalle.metfraglib.fragment.DefaultBitArrayFragment;
-import de.ipbhalle.metfraglib.fragmenter.TopDownFragmenter;
+import de.ipbhalle.metfraglib.fragmenter.TopDownNeutralLossFragmenter;
 import de.ipbhalle.metfraglib.interfaces.IFragment;
 import de.ipbhalle.metfraglib.interfaces.IMolecularFormula;
-import de.ipbhalle.metfraglib.list.FragmentList;
 import de.ipbhalle.metfraglib.parameter.Constants;
 import de.ipbhalle.metfraglib.parameter.VariableNames;
+import de.ipbhalle.metfraglib.precursor.AbstractTopDownBitArrayPrecursor;
 import de.ipbhalle.metfraglib.settings.Settings;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Small, line-oriented JSON CLI for MetFragLib top-down structural fragmentation. */
 public final class FragmenterCli {
@@ -43,18 +49,40 @@ public final class FragmenterCli {
         settings.set(VariableNames.MAXIMUM_NUMBER_OF_TOPDOWN_FRAGMENT_ADDED_TO_QUEUE,
                 Constants.DEFAULT_MAXIMUM_NUMBER_OF_TOPDOWN_FRAGMENT_ADDED_TO_QUEUE);
 
-        FragmentList fragments = new TopDownFragmenter(settings).generateFragments();
-        StringBuilder json = new StringBuilder(256 + fragments.getNumberElements() * 192);
+        ExposedNeutralLossFragmenter fragmenter = new ExposedNeutralLossFragmenter(settings);
+        AbstractTopDownBitArrayFragment root = ((AbstractTopDownBitArrayPrecursor)
+                candidate.getPrecursorMolecule()).toFragment();
+        fragmenter.registerRoot(root);
+
+        List<AbstractTopDownBitArrayFragment> fragments = new ArrayList<>();
+        fragments.add(root);
+        Map<AbstractTopDownBitArrayFragment, Integer> parents = new IdentityHashMap<>();
+        Map<AbstractTopDownBitArrayFragment, NeutralLossMatch> losses = new IdentityHashMap<>();
+        List<AbstractTopDownBitArrayFragment> frontier = List.of(root);
+        BitArrayNeutralLoss[] knownLosses = fragmenter.neutralLossPatterns();
+        for (int level = 1; level <= depth && !frontier.isEmpty(); level++) {
+            List<AbstractTopDownBitArrayFragment> next = new ArrayList<>();
+            for (AbstractTopDownBitArrayFragment parent : frontier) {
+                ArrayList<AbstractTopDownBitArrayFragment> children = fragmenter.getFragmentsOfNextTreeDepth(parent);
+                next.addAll(children);
+                for (AbstractTopDownBitArrayFragment child : children) parents.put(child, parent.getID());
+                recordNeutralLosses(parent, children, knownLosses, losses, candidate.getPrecursorMolecule());
+            }
+            fragments.addAll(next);
+            frontier = next;
+        }
+
+        StringBuilder json = new StringBuilder(256 + fragments.size() * 192);
         json.append("{\"schema_version\":1,\"input_smiles\":").append(quote(smiles))
                 .append(",\"requested_depth\":").append(depth)
-                .append(",\"fragmentation_method\":\"metfrag_top_down\"")
-                .append(",\"relationship_status\":\"unavailable_from_metfrag_fragment_list\"")
-                .append(",\"neutral_loss_status\":\"not_exposed_by_public_fragment_result\"")
+                .append(",\"fragmentation_method\":\"metfrag_top_down_neutral_loss\"")
+                .append(",\"relationship_status\":\"captured_during_depth_traversal\"")
+                .append(",\"neutral_loss_status\":\"metfrag_neutral_loss_pattern_matches\"")
                 .append(",\"fragments\":[");
 
-        for (int i = 0; i < fragments.getNumberElements(); i++) {
+        for (int i = 0; i < fragments.size(); i++) {
             if (i > 0) json.append(',');
-            IFragment fragment = fragments.getElement(i);
+            IFragment fragment = fragments.get(i);
             IMolecularFormula formula = fragment.getMolecularFormula(candidate.getPrecursorMolecule());
             DefaultBitArrayFragment bitArrayFragment = (DefaultBitArrayFragment) fragment;
             json.append("{\"id\":").append(fragment.getID())
@@ -62,13 +90,72 @@ public final class FragmenterCli {
                     .append(",\"formula\":").append(quote(formula.toString()))
                     .append(",\"exact_mass\":").append(Double.toString(fragment.getMonoisotopicMass(candidate.getPrecursorMolecule())))
                     .append(",\"depth\":").append(fragment.getTreeDepth())
-                    .append(",\"parent_id\":null,\"parent_link_status\":\"unavailable\"")
+                    .append(",\"parent_id\":").append(parents.containsKey((AbstractTopDownBitArrayFragment) fragment)
+                            ? parents.get((AbstractTopDownBitArrayFragment) fragment) : "null")
                     .append(",\"atom_indices\":").append(indices(bitArrayFragment.getAtomsFastBitArray()))
                     .append(",\"broken_bond_indices\":").append(intArray(fragment.getBrokenBondIndeces()))
-                    .append(",\"neutral_losses\":null");
+                    .append(",\"neutral_losses\":");
+            NeutralLossMatch loss = losses.get((AbstractTopDownBitArrayFragment) fragment);
+            if (loss == null) json.append("[]");
+            else json.append("[{\"smarts\":").append(quote(loss.smarts()))
+                    .append(",\"smiles\":").append(quote(loss.smiles()))
+                    .append(",\"formula\":").append(quote(loss.formula()))
+                    .append(",\"exact_mass\":").append(Double.toString(loss.exactMass()))
+                    .append(",\"metfrag_neutral_loss_mass\":").append(Double.toString(loss.metfragMass())).append("}]");
             json.append('}');
         }
         return json.append("]}").toString();
+    }
+
+    private static void recordNeutralLosses(AbstractTopDownBitArrayFragment parent,
+            List<AbstractTopDownBitArrayFragment> children, BitArrayNeutralLoss[] knownLosses,
+            Map<AbstractTopDownBitArrayFragment, NeutralLossMatch> output,
+            de.ipbhalle.metfraglib.interfaces.IMolecularStructure precursor) {
+        for (AbstractTopDownBitArrayFragment child : children) {
+            for (AbstractTopDownBitArrayFragment detached : children) {
+                if (child == detached || !disjoint(child.getAtomsFastBitArray(), detached.getAtomsFastBitArray())
+                        || !sameBits(parent.getAtomsFastBitArray(), union(child.getAtomsFastBitArray(), detached.getAtomsFastBitArray()))) continue;
+                for (BitArrayNeutralLoss lossType : knownLosses) {
+                    for (int i = 0; i < lossType.getNumberNeutralLosses(); i++) {
+                        FastBitArray pattern = lossType.getNeutralLossAtomFastBitArray(i);
+                        if (sameBits(pattern, detached.getAtomsFastBitArray())) {
+                            NeutralLosses catalogue = new NeutralLosses();
+                            output.put(child, new NeutralLossMatch(catalogue.getSmartsPattern(lossType.getNeutralLossType()),
+                                    detached.getSmiles(precursor),
+                                    detached.getMolecularFormula(precursor).toString(),
+                                    detached.getMonoisotopicMass(precursor),
+                                    catalogue.getMonoisotopicMass(lossType.getNeutralLossType())));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static FastBitArray union(FastBitArray left, FastBitArray right) {
+        FastBitArray result = left.clone();
+        for (int i = 0; i < right.getSize(); i++) if (right.get(i)) result.set(i);
+        return result;
+    }
+
+    private static boolean sameBits(FastBitArray left, FastBitArray right) {
+        if (left.getSize() != right.getSize()) return false;
+        for (int i = 0; i < left.getSize(); i++) if (left.get(i) != right.get(i)) return false;
+        return true;
+    }
+
+    private static boolean disjoint(FastBitArray left, FastBitArray right) {
+        if (left.getSize() != right.getSize()) return false;
+        for (int i = 0; i < left.getSize(); i++) if (left.get(i) && right.get(i)) return false;
+        return true;
+    }
+
+    private record NeutralLossMatch(String smarts, String smiles, String formula, double exactMass, double metfragMass) {}
+
+    private static final class ExposedNeutralLossFragmenter extends TopDownNeutralLossFragmenter {
+        ExposedNeutralLossFragmenter(Settings settings) throws Exception { super(settings); }
+        void registerRoot(AbstractTopDownBitArrayFragment root) { processGeneratedFragments(new AbstractTopDownBitArrayFragment[]{root}); }
+        BitArrayNeutralLoss[] neutralLossPatterns() { return detectedNeutralLosses; }
     }
 
     private static String indices(de.ipbhalle.metfraglib.FastBitArray bits) {
