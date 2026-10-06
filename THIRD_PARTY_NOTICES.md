@@ -23,4 +23,4 @@ The official project page resolves MetFrag's stated license; a maintainer issue 
 
 ## Distribution status
 
-The shaded JAR is built for private CI validation only and is not attached to a release. MetFrag's stated license is documented; binary distribution remains pending the LGPL packaging work and full dependency notice audit.
+A draft v0.1.0 release now contains the self-contained JAR, a companion source/relink archive with the pinned MetFragLib source, LGPL-2.1 text, dependency license/notice files found in the build cache, runtime SBOM, and checksums. It is not published. MetFrag's stated license is documented and the LGPL source/relink materials are included, but the component-by-component audit of dependency licenses and required notices is still incomplete. Complete that review before publishing the draft.
