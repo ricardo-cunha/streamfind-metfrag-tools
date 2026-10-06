@@ -12,7 +12,7 @@ Original wrapper code is licensed under [GPL-3.0-only](../LICENSE). MetFragLib a
 - Maven 3.8 or later
 - MetFragRelaunched source built and installed locally
 
-MetFragLib currently appears as `2.6.12-SNAPSHOT` on the inspected upstream branch and is not declared here as a released Maven Central dependency. First build its source from the upstream repository:
+The wrapper excludes MetFragLib's optional database, spreadsheet, R-server, JavaScript-engine, and JUnit adapters because the CLI does not use them; the workflow verifies they are absent from the shaded JAR. MetFragLib currently appears as `2.6.12-SNAPSHOT` on the inspected upstream branch and is not declared here as a released Maven Central dependency. First build its source from the upstream repository:
 
 ```sh
 git clone https://github.com/ipb-halle/MetFragRelaunched.git

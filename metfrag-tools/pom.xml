@@ -25,7 +25,17 @@
       <groupId>de.ipbhalle.metfraglib</groupId>
       <artifactId>MetFragLib</artifactId>
       <version>${metfrag.version}</version>
-    </dependency>
+      <exclusions>
+        <!-- Optional adapters unused by the standalone SMILES fragmentation CLI. -->
+        <exclusion><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId></exclusion>
+        <exclusion><groupId>com.mysql</groupId><artifactId>mysql-connector-j</artifactId></exclusion>
+        <exclusion><groupId>net.sourceforge.jexcelapi</groupId><artifactId>jxl</artifactId></exclusion>
+        <exclusion><groupId>net.rforge</groupId><artifactId>Rserve</artifactId></exclusion>
+        <exclusion><groupId>net.rforge</groupId><artifactId>REngine</artifactId></exclusion>
+        <exclusion><groupId>org.openjdk.nashorn</groupId><artifactId>nashorn-core</artifactId></exclusion>
+        <exclusion><groupId>junit</groupId><artifactId>junit</artifactId></exclusion>
+        <exclusion><groupId>org.hamcrest</groupId><artifactId>hamcrest-core</artifactId></exclusion>
+      </exclusions>
   </dependencies>
   <build>
     <plugins>

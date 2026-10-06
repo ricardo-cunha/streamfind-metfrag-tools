@@ -21,7 +21,7 @@ The returned flat `FragmentList` still has no authoritative parent edges: in the
 
 The specialized `TopDownNeutralLossFragmenter` holds matched `BitArrayNeutralLoss` patterns in protected state. Each pattern exposes its atom mask and neutral-loss type; the pinned `NeutralLosses` catalogue provides its SMARTS and configured mass. The CLI subclasses the fragmenter only to read that state and emits a neutral-loss record when a detached child exactly equals one of those masks and its sibling completes the parent's atom set. The record includes the matched atom set's SMILES, formula, and mass; MetFrag's catalogue neutral-loss mass; and the hydrogen adjustment applied to the surviving fragment. The matched-atom structure is not necessarily the complete hydrogen-adjusted neutral species. This is deliberately limited to MetFrag's built-in pattern matches; it is not a complete chemical neutral-loss search.
 
-The source confirms these capabilities, but runtime assertions and representative examples must still pass on Linux and Windows before calling the fields validated.
+CI now asserts parent references on ethanol, aspirin, vanillin, and metoprolol on Linux and Windows, and verifies that ethanol yields at least one built-in neutral-loss match. Optional database/spreadsheet/R/script/test adapters are excluded from the shaded CLI archive and checked absent at runtime.
 
 ## License scope
 
