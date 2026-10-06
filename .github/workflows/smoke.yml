@@ -1,0 +1,57 @@
+name: Build and smoke-test CLI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out wrapper
+        uses: actions/checkout@v4
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Set up Python for JSON validation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check out MetFrag source
+        uses: actions/checkout@v4
+        with:
+          repository: ipb-halle/MetFragRelaunched
+          ref: 2c8671b4d8d29b05ca9461e1238c2e4268ce9e21
+          path: MetFragRelaunched
+      - name: Install MetFragLib locally
+        run: mvn -B clean install -pl MetFragLib -am -DskipTests
+        working-directory: MetFragRelaunched
+      - name: Package wrapper
+        run: mvn -B clean package
+        working-directory: metfrag-tools
+      - name: Run representative SMILES and validate JSON
+        shell: bash
+        run: |
+          jar="metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar"
+          while IFS='|' read -r smiles depth; do
+            java -jar "$jar" --smiles "$smiles" --depth "$depth" |
+              python -c 'import json,sys; d=json.load(sys.stdin); assert d["schema_version"] == 1; assert d["fragments"]; assert all(isinstance(f["smiles"], str) and f["smiles"] for f in d["fragments"]); assert all(f["depth"] <= d["requested_depth"] and f["exact_mass"] > 0 for f in d["fragments"]); print("validated", len(d["fragments"]), "fragments for", d["input_smiles"])'
+          done <<'MOLECULES'
+          CCO|1
+          CC(=O)Oc1ccccc1C(=O)O|2
+          COc1cc(C=O)ccc1O|2
+          MOLECULES
