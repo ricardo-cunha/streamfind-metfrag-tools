@@ -60,7 +60,7 @@ jobs:
           git -C MetFragRelaunched archive 2c8671b4d8d29b05ca9461e1238c2e4268ce9e21 | tar -x -C dist/source/MetFragRelaunched
           cp streamfind-metfrag-tools/metfrag-tools/target/bom.json dist/source/
           cp streamfind-metfrag-tools/THIRD_PARTY_NOTICES.md dist/
-          curl --fail --location --silent --show-error https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt -o dist/source/licenses/LGPL-2.1.txt
+          curl --fail --location --silent --show-error --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 20 --max-time 90 https://raw.githubusercontent.com/spdx/license-list-data/main/text/LGPL-2.1-only.txt -o dist/source/licenses/LGPL-2.1.txt
           python - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
