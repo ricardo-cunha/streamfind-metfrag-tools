@@ -2,6 +2,10 @@
 
 This Java command line adapter accepts a SMILES and maximum top-down fragmentation depth and emits one JSON object on standard output.
 
+## License
+
+Original wrapper code is licensed under [GPL-3.0-only](../LICENSE). MetFragLib and transitive dependencies retain their respective licenses; see [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
 ## Build prerequisites
 
 - Java 21 JDK
@@ -37,4 +41,4 @@ Errors are JSON on standard output and return exit code 1; invalid CLI arguments
 
 ## Validation
 
-The latest [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions/runs/37425049329) built the JAR and ran three representative SMILES successfully on Ubuntu 24.04 and Windows latest. This workstation itself has no Java or Maven installation and WSL is inaccessible.
+The [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions) builds the JAR and validates JSON for ethanol, aspirin, vanillin, and metoprolol. The latest run is linked from the repository README.

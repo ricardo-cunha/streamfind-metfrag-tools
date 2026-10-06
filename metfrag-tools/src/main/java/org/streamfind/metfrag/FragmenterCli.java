@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 package org.streamfind.metfrag;
 
 import de.ipbhalle.metfraglib.candidate.TopDownPrecursorCandidate;

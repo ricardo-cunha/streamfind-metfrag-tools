@@ -54,4 +54,10 @@ jobs:
           CCO|1
           CC(=O)Oc1ccccc1C(=O)O|2
           COc1cc(C=O)ccc1O|2
+          CC(C)NCC(COC1=CC=C(C=C1)CCOC)O|1
           MOLECULES
+      - name: Print metoprolol JSON example
+        shell: bash
+        run: |
+          java -jar metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar --smiles 'CC(C)NCC(COC1=CC=C(C=C1)CCOC)O' --depth 1 |
+            python -c 'import json,sys; d=json.load(sys.stdin); frags=d["fragments"]; assert frags and frags[0]["formula"] == "C15H25NO3"; d["fragment_count_total"]=len(frags); d["preview_truncated"]=len(frags)>5; d["fragments"]=frags[:5]; print("METOPROLOL_JSON_BEGIN"); print(json.dumps(d,indent=2)); print("METOPROLOL_JSON_END")'
