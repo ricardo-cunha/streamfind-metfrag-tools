@@ -6,7 +6,7 @@ Standalone structural fragmentation tools for streamfind. The first tool is a Ja
 
 A source-level MetFragLib API investigation is documented in [API_SPIKE.md](API_SPIKE.md). The initial CLI adapter and Maven build are in [metfrag-tools](metfrag-tools/README.md).
 
-The source has not yet been compiled or executed against example molecules. Local binary redistribution is on hold because the upstream repository has no detectable license grant; see the API spike before publishing artifacts.
+The initial CLI source is committed and a Linux/Windows smoke run is in progress. Local binary redistribution is on hold because the upstream repository has no detectable license grant; see the API spike before publishing artifacts.
 
 ## Intended command
 
@@ -20,4 +20,4 @@ The CLI emits JSON on standard output, including fragment SMILES, formula, neutr
 
 - [MetFragRelaunched](https://github.com/ipb-halle/MetFragRelaunched)
 - Inspected branch: `dev`
-- Inspected tree: `2c8671b4d8d29b05ca9461e1238c2e4268ce9e21`
+- Inspected commit: `2c8671b4d8d29b05ca9461e1238c2e4268ce9e21`
