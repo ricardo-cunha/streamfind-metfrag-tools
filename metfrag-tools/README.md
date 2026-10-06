@@ -35,7 +35,7 @@ The shaded jar is a local build output only. Do not publish it until upstream re
 - `fragments[]`: MetFrag fragment `id`, `smiles`, `formula`, neutral monoisotopic `exact_mass`, and `depth`
 - `atom_indices` and `broken_bond_indices`: precursor-relative MetFrag indices; atom and bond index mapping still needs validation against input ordering
 - `parent_id` is captured from the exact parent object whose per-depth API call generated the fragment
-- `neutral_losses` contains a detached fragment only when its atom mask exactly matches a MetFrag neutral-loss pattern; see the top-level `neutral_loss_status`
+- `neutral_losses` contains a matched atom set only when its mask exactly matches a MetFrag pattern, alongside the catalogue loss mass and survivor hydrogen adjustment; the match structure is not necessarily the complete neutral species
 
 Errors are JSON on standard output and return exit code 1; invalid CLI arguments return exit code 2. `--help` prints usage.
 

@@ -57,7 +57,7 @@ public final class FragmenterCli {
         List<AbstractTopDownBitArrayFragment> fragments = new ArrayList<>();
         fragments.add(root);
         Map<AbstractTopDownBitArrayFragment, Integer> parents = new IdentityHashMap<>();
-        Map<AbstractTopDownBitArrayFragment, NeutralLossMatch> losses = new IdentityHashMap<>();
+        Map<AbstractTopDownBitArrayFragment, List<NeutralLossMatch>> losses = new IdentityHashMap<>();
         List<AbstractTopDownBitArrayFragment> frontier = List.of(root);
         BitArrayNeutralLoss[] knownLosses = fragmenter.neutralLossPatterns();
         for (int level = 1; level <= depth && !frontier.isEmpty(); level++) {
@@ -77,7 +77,7 @@ public final class FragmenterCli {
                 .append(",\"requested_depth\":").append(depth)
                 .append(",\"fragmentation_method\":\"metfrag_top_down_neutral_loss\"")
                 .append(",\"relationship_status\":\"captured_during_depth_traversal\"")
-                .append(",\"neutral_loss_status\":\"metfrag_neutral_loss_pattern_matches\"")
+                .append(",\"neutral_loss_status\":\"metfrag_pattern_and_atom_mask_matches\"")
                 .append(",\"fragments\":[");
 
         for (int i = 0; i < fragments.size(); i++) {
@@ -95,13 +95,22 @@ public final class FragmenterCli {
                     .append(",\"atom_indices\":").append(indices(bitArrayFragment.getAtomsFastBitArray()))
                     .append(",\"broken_bond_indices\":").append(intArray(fragment.getBrokenBondIndeces()))
                     .append(",\"neutral_losses\":");
-            NeutralLossMatch loss = losses.get((AbstractTopDownBitArrayFragment) fragment);
-            if (loss == null) json.append("[]");
-            else json.append("[{\"smarts\":").append(quote(loss.smarts()))
-                    .append(",\"smiles\":").append(quote(loss.smiles()))
-                    .append(",\"formula\":").append(quote(loss.formula()))
-                    .append(",\"exact_mass\":").append(Double.toString(loss.exactMass()))
-                    .append(",\"metfrag_neutral_loss_mass\":").append(Double.toString(loss.metfragMass())).append("}]");
+            List<NeutralLossMatch> fragmentLosses = losses.get((AbstractTopDownBitArrayFragment) fragment);
+            if (fragmentLosses == null || fragmentLosses.isEmpty()) json.append("[]");
+            else {
+                json.append('[');
+                for (int j = 0; j < fragmentLosses.size(); j++) {
+                    if (j > 0) json.append(',');
+                    NeutralLossMatch loss = fragmentLosses.get(j);
+                    json.append("{\"smarts_pattern\":").append(quote(loss.smarts()))
+                            .append(",\"matched_atom_smiles\":").append(quote(loss.matchedAtomSmiles()))
+                            .append(",\"matched_atom_formula\":").append(quote(loss.matchedAtomFormula()))
+                            .append(",\"matched_atom_exact_mass\":").append(Double.toString(loss.matchedAtomMass()))
+                            .append(",\"metfrag_neutral_loss_mass\":").append(Double.toString(loss.metfragMass()))
+                            .append(",\"survivor_hydrogen_delta\":").append(loss.survivorHydrogenDelta()).append('}');
+                }
+                json.append(']');
+            }
             json.append('}');
         }
         return json.append("]}").toString();
@@ -109,7 +118,7 @@ public final class FragmenterCli {
 
     private static void recordNeutralLosses(AbstractTopDownBitArrayFragment parent,
             List<AbstractTopDownBitArrayFragment> children, BitArrayNeutralLoss[] knownLosses,
-            Map<AbstractTopDownBitArrayFragment, NeutralLossMatch> output,
+            Map<AbstractTopDownBitArrayFragment, List<NeutralLossMatch>> output,
             de.ipbhalle.metfraglib.interfaces.IMolecularStructure precursor) {
         for (AbstractTopDownBitArrayFragment child : children) {
             for (AbstractTopDownBitArrayFragment detached : children) {
@@ -120,11 +129,14 @@ public final class FragmenterCli {
                         FastBitArray pattern = lossType.getNeutralLossAtomFastBitArray(i);
                         if (sameBits(pattern, detached.getAtomsFastBitArray())) {
                             NeutralLosses catalogue = new NeutralLosses();
-                            output.put(child, new NeutralLossMatch(catalogue.getSmartsPattern(lossType.getNeutralLossType()),
+                            NeutralLossMatch match = new NeutralLossMatch(catalogue.getSmartsPattern(lossType.getNeutralLossType()),
                                     detached.getSmiles(precursor),
                                     detached.getMolecularFormula(precursor).toString(),
                                     detached.getMonoisotopicMass(precursor),
-                                    catalogue.getMonoisotopicMass(lossType.getNeutralLossType())));
+                                    catalogue.getMonoisotopicMass(lossType.getNeutralLossType()),
+                                    lossType.getHydrogenDifference());
+                            List<NeutralLossMatch> matches = output.computeIfAbsent(child, ignored -> new ArrayList<>());
+                            if (!matches.contains(match)) matches.add(match);
                         }
                     }
                 }
@@ -150,7 +162,8 @@ public final class FragmenterCli {
         return true;
     }
 
-    private record NeutralLossMatch(String smarts, String smiles, String formula, double exactMass, double metfragMass) {}
+    private record NeutralLossMatch(String smarts, String matchedAtomSmiles, String matchedAtomFormula,
+            double matchedAtomMass, double metfragMass, byte survivorHydrogenDelta) {}
 
     private static final class ExposedNeutralLossFragmenter extends TopDownNeutralLossFragmenter {
         ExposedNeutralLossFragmenter(Settings settings) throws Exception { super(settings); }

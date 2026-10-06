@@ -17,7 +17,7 @@ Original wrapper source and project-authored documentation use GPL-3.0-only; see
 | CycloneDX Maven Plugin | 2.9.3 | Produces runtime dependency SBOM in CI | Build-only plugin; not copied into the JAR. |
 | GitHub Actions and actions | checkout v7, setup-java v6, setup-python v7, upload-artifact v7.0.1 | CI build, validation, and SBOM retention | CI services/actions; not runtime dependencies. |
 
-The CycloneDX SBOM is generated after MetFragLib is installed and the wrapper is packaged, so it inventories the resolved runtime graph used by Maven for the wrapper. License expressions in dependency metadata are discovery aids, not legal conclusions. The current audit is incomplete while MetFragLib's terms and the exact component notice obligations remain unconfirmed.
+The CycloneDX SBOM is generated after MetFragLib is installed and the wrapper is packaged, so it inventories the resolved runtime graph used by Maven for the wrapper. CI prints each component's Maven-declared license metadata for review and uploads the raw JSON SBOM. License expressions in dependency metadata are discovery aids, not legal conclusions. The current audit is incomplete while MetFragLib's terms and the exact component notice obligations remain unconfirmed.
 
 ## Distribution status
 
