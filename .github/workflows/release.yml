@@ -109,10 +109,19 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         working-directory: streamfind-metfrag-tools
         run: |
-          gh release create "v${RELEASE_VERSION}" \
-            ../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar \
-            ../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}-source.zip \
-            ../dist/SHA256SUMS ../dist/THIRD_PARTY_NOTICES.md \
-            --draft --title "MetFrag Fragmenter v${RELEASE_VERSION}" \
-            --target "${GITHUB_SHA}" \
-            --notes "Draft release for review. Includes the self-contained CLI JAR, companion source/relink archive for the pinned MetFragLib version, runtime SBOM, third-party notices, and SHA-256 checksums. The source archive carries MetFragLib source and wrapper build materials. Complete the dependency-by-dependency license/notice audit before publishing this draft."
+          release_tag="v${RELEASE_VERSION}"
+          notes="Draft release for review. Includes the self-contained CLI JAR, companion source/relink archive for the pinned MetFragLib version, runtime SBOM, third-party notices, and SHA-256 checksums. The source archive carries MetFragLib source and wrapper build materials. The component-by-component dependency license/notice audit remains incomplete; do not publish until it is finished."
+          assets=(
+            "../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
+            "../dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}-source.zip"
+            "../dist/SHA256SUMS"
+            "../dist/THIRD_PARTY_NOTICES.md"
+          )
+          if gh release view "${release_tag}" >/dev/null 2>&1; then
+            gh release upload "${release_tag}" "${assets[@]}" --clobber
+            gh release edit "${release_tag}" --title "MetFrag Fragmenter v${RELEASE_VERSION}" --notes "${notes}"
+          else
+            gh release create "${release_tag}" "${assets[@]}" \
+              --draft --title "MetFrag Fragmenter v${RELEASE_VERSION}" \
+              --target "${GITHUB_SHA}" --notes "${notes}"
+          fi
