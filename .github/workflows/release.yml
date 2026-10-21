@@ -6,7 +6,7 @@ on:
       version:
         description: Release version (without v)
         required: true
-        default: '0.1.0'
+        default: '0.2.0'
 
 permissions:
   contents: write
@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          java -jar streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar \
+          java -jar streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar \
             --smiles 'CC(C)NCC(COC1=CC=C(C=C1)CCOC)O' --depth 1 |
             python -c 'import json,sys; d=json.load(sys.stdin); assert d["fragments"] and d["fragments"][0]["formula"] == "C15H25NO3"; assert all(f["exact_mass"] > 0 for f in d["fragments"]); print("Validated metoprolol:", len(d["fragments"]), "fragments")'
       - name: Assemble JAR and companion source package
@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/source/streamfind-metfrag-tools dist/source/MetFragRelaunched dist/source/licenses
-          cp streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar "dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
+          cp streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar "dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
           cp streamfind-metfrag-tools/LICENSE streamfind-metfrag-tools/README.md streamfind-metfrag-tools/THIRD_PARTY_NOTICES.md dist/source/streamfind-metfrag-tools/
           cp -R streamfind-metfrag-tools/metfrag-tools dist/source/streamfind-metfrag-tools/
           rm -rf dist/source/streamfind-metfrag-tools/metfrag-tools/target

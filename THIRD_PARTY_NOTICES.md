@@ -6,7 +6,7 @@ Original wrapper source and project-authored documentation use GPL-3.0-only; see
 
 ## Runtime software inventory
 
-The v0.1.0 executable is a shaded Java archive built on 2026-10-06 from the pinned MetFragRelaunched source revision below. The release's companion source/relink archive contains the CycloneDX runtime SBOM (`bom.json`), LGPL-2.1 text, the wrapper sources and build file, pinned MetFrag source, and license/notice files collected from runtime dependency archives.
+The v0.2.0 executable is a shaded Java archive built from the pinned MetFragRelaunched source revision below. The release's companion source/relink archive contains the CycloneDX runtime SBOM (`bom.json`), LGPL-2.1 text, the wrapper sources and build file, pinned MetFrag source, and license/notice files collected from runtime dependency archives.
 
 | Component group | Version(s) in the release | License information recorded by the source project or runtime SBOM |
 |---|---|---|

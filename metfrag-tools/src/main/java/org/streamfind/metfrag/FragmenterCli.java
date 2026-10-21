@@ -10,6 +10,11 @@ import de.ipbhalle.metfraglib.fragment.DefaultBitArrayFragment;
 import de.ipbhalle.metfraglib.fragmenter.TopDownNeutralLossFragmenter;
 import de.ipbhalle.metfraglib.interfaces.IFragment;
 import de.ipbhalle.metfraglib.interfaces.IMolecularFormula;
+import de.ipbhalle.metfraglib.additionals.MoleculeFunctions;
+import org.openscience.cdk.interfaces.IAtom;
+import org.openscience.cdk.interfaces.IAtomContainer;
+import org.openscience.cdk.smiles.SmilesParser;
+import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import de.ipbhalle.metfraglib.parameter.Constants;
 import de.ipbhalle.metfraglib.parameter.VariableNames;
 import de.ipbhalle.metfraglib.precursor.AbstractTopDownBitArrayPrecursor;
@@ -41,6 +46,7 @@ public final class FragmenterCli {
         TopDownPrecursorCandidate candidate = new TopDownPrecursorCandidate("", "streamfind-input", smiles);
         candidate.setUseSmiles(true);
         candidate.initialisePrecursorCandidate();
+        IAtomContainer isotopeSource = parseIsotopeSource(smiles);
 
         Settings settings = new Settings();
         settings.set(VariableNames.CANDIDATE_NAME, candidate);
@@ -83,12 +89,13 @@ public final class FragmenterCli {
         for (int i = 0; i < fragments.size(); i++) {
             if (i > 0) json.append(',');
             IFragment fragment = fragments.get(i);
-            IMolecularFormula formula = fragment.getMolecularFormula(candidate.getPrecursorMolecule());
             DefaultBitArrayFragment bitArrayFragment = (DefaultBitArrayFragment) fragment;
+            IsotopeAwareMetrics isotopeAwareMetrics = isotopeAwareMetrics(
+                    bitArrayFragment, candidate.getPrecursorMolecule().getStructureAsIAtomContainer(), isotopeSource);
             json.append("{\"id\":").append(fragment.getID())
                     .append(",\"smiles\":").append(quote(fragment.getSmiles(candidate.getPrecursorMolecule())))
-                    .append(",\"formula\":").append(quote(formula.toString()))
-                    .append(",\"exact_mass\":").append(Double.toString(fragment.getMonoisotopicMass(candidate.getPrecursorMolecule())))
+                    .append(",\"formula\":").append(quote(isotopeAwareMetrics.formula()))
+                    .append(",\"exact_mass\":").append(Double.toString(isotopeAwareMetrics.mass()))
                     .append(",\"depth\":").append(fragment.getTreeDepth())
                     .append(",\"parent_id\":").append(parents.containsKey((AbstractTopDownBitArrayFragment) fragment)
                             ? parents.get((AbstractTopDownBitArrayFragment) fragment) : "null")
@@ -115,6 +122,104 @@ public final class FragmenterCli {
         }
         return json.append("]}").toString();
     }
+
+    private static IsotopeAwareMetrics isotopeAwareMetrics(
+            DefaultBitArrayFragment fragment, IAtomContainer precursor, IAtomContainer isotopeSource) {
+        Map<String, Integer> counts = new java.util.TreeMap<>();
+        double mass = 0.0;
+        for (int index = 0; index < precursor.getAtomCount(); index++) {
+            if (!fragment.getAtomsFastBitArray().get(index)) continue;
+            IAtom atom = precursor.getAtom(index);
+            IAtom sourceAtom = nonHydrogenAtom(isotopeSource, index);
+            String symbol = sourceAtom == null ? atom.getSymbol() : sourceAtom.getSymbol();
+            Integer massNumber = sourceAtom == null ? atom.getMassNumber() : sourceAtom.getMassNumber();
+            String formulaSymbol = isotopeFormulaSymbol(symbol, massNumber);
+            counts.merge(formulaSymbol, 1, Integer::sum);
+            mass += isotopeMass(sourceAtom == null ? atom : sourceAtom);
+
+            Integer implicitHydrogens = sourceAtom == null ? atom.getImplicitHydrogenCount() : sourceAtom.getImplicitHydrogenCount();
+            if (implicitHydrogens != null && implicitHydrogens > 0) {
+                counts.merge("H", implicitHydrogens, Integer::sum);
+                mass += implicitHydrogens * 1.00782503223;
+            }
+            int deuteriumCount = sourceAtom == null ? 0 : countDeuteriumNeighbours(isotopeSource, sourceAtom);
+            if (deuteriumCount > 0) {
+                counts.merge("D", deuteriumCount, Integer::sum);
+                mass += deuteriumCount * 2.01410177812;
+            }
+        }
+        return new IsotopeAwareMetrics(formatFormula(counts), mass);
+    }
+
+    private static IAtomContainer parseIsotopeSource(String smiles) throws Exception {
+        SmilesParser parser = new SmilesParser(SilentChemObjectBuilder.getInstance());
+        IAtomContainer source = parser.parseSmiles(smiles);
+        MoleculeFunctions.prepareAtomContainer(source, false);
+        return source;
+    }
+
+    private static IAtom nonHydrogenAtom(IAtomContainer source, int heavyAtomIndex) {
+        int current = 0;
+        for (IAtom atom : source.atoms()) {
+            if (atom.getSymbol().equals("H")) continue;
+            if (current++ == heavyAtomIndex) return atom;
+        }
+        return null;
+    }
+
+    private static int countDeuteriumNeighbours(IAtomContainer source, IAtom atom) {
+        int count = 0;
+        for (IAtom neighbour : source.getConnectedAtomsList(atom)) {
+            if (neighbour.getSymbol().equals("H") && Integer.valueOf(2).equals(neighbour.getMassNumber())) count++;
+        }
+        return count;
+    }
+
+    private static String isotopeFormulaSymbol(String symbol, Integer massNumber) {
+        if (massNumber == null || massNumber == 1) return symbol;
+        if (symbol.equals("H") && massNumber == 2) return "D";
+        return "[" + massNumber + symbol + "]";
+    }
+
+    private static double isotopeMass(IAtom atom) {
+        Integer massNumber = atom.getMassNumber();
+        if (atom.getExactMass() != null) return atom.getExactMass();
+        if (atom.getSymbol().equals("H") && massNumber != null && massNumber == 2) return 2.01410177812;
+        return switch (atom.getSymbol()) {
+            case "C" -> 12.0;
+            case "N" -> 14.00307400443;
+            case "O" -> 15.99491461957;
+            case "P" -> 30.97376199842;
+            case "S" -> 31.9720711744;
+            case "F" -> 18.99840316273;
+            case "Cl" -> 34.968852682;
+            case "Br" -> 78.9183376;
+            default -> throw new IllegalArgumentException("No monoisotopic mass available for " + atom.getSymbol());
+        };
+    }
+
+    private static String formatFormula(Map<String, Integer> counts) {
+        StringBuilder formula = new StringBuilder();
+        String[] preferredOrder = {"C", "H", "D", "N", "O", "P", "S", "F", "Cl", "Br", "I"};
+        java.util.Set<String> emitted = new java.util.HashSet<>();
+        for (String symbol : preferredOrder) {
+            appendFormulaPart(formula, counts, symbol);
+            emitted.add(symbol);
+        }
+        for (String symbol : counts.keySet()) {
+            if (!emitted.contains(symbol)) appendFormulaPart(formula, counts, symbol);
+        }
+        return formula.toString();
+    }
+
+    private static void appendFormulaPart(StringBuilder formula, Map<String, Integer> counts, String symbol) {
+        Integer count = counts.get(symbol);
+        if (count == null || count == 0) return;
+        formula.append(symbol);
+        if (count != 1) formula.append(count);
+    }
+
+    private record IsotopeAwareMetrics(String formula, double mass) {}
 
     private static void recordNeutralLosses(AbstractTopDownBitArrayFragment parent,
             List<AbstractTopDownBitArrayFragment> children, BitArrayNeutralLoss[] knownLosses,

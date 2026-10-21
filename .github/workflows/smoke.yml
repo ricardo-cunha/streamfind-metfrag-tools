@@ -61,7 +61,7 @@ jobs:
       - name: Run representative SMILES and validate JSON
         shell: bash
         run: |
-          jar="metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar"
+          jar="metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar"
           while IFS='|' read -r smiles depth; do
             java -jar "$jar" --smiles "$smiles" --depth "$depth" |
               python -c 'import json,sys; d=json.load(sys.stdin); assert d["schema_version"] == 1; assert d["fragments"]; assert all(isinstance(f["smiles"], str) and f["smiles"] and isinstance(f["formula"], str) and f["formula"] and isinstance(f["atom_indices"], list) and isinstance(f["broken_bond_indices"], list) and isinstance(f["neutral_losses"], list) for f in d["fragments"]); ids={f["id"] for f in d["fragments"]}; assert sum(f["parent_id"] is None for f in d["fragments"]) == 1; assert all(f["parent_id"] in ids for f in d["fragments"] if f["parent_id"] is not None); assert all(f["depth"] <= d["requested_depth"] and f["exact_mass"] > 0 for f in d["fragments"]); assert d["relationship_status"] == "captured_during_depth_traversal"; assert d["neutral_loss_status"] == "metfrag_pattern_and_atom_mask_matches"; assert d["input_smiles"] != "CCO" or any(f["neutral_losses"] for f in d["fragments"]); print("validated", len(d["fragments"]), "fragments for", d["input_smiles"]); [print("ETHANOL_NEUTRAL_LOSS", json.dumps(f)) for f in d["fragments"] if d["input_smiles"] == "CCO" and f["neutral_losses"]]'
@@ -76,7 +76,7 @@ jobs:
         run: |
           python - <<'PY'
           import zipfile
-          jar = "metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar"
+          jar = "metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar"
           with zipfile.ZipFile(jar) as archive:
               names = archive.namelist()
           forbidden = ("com/mysql/", "org/postgresql/", "jxl/", "net/rforge/", "org/openjdk/nashorn/", "org/junit/", "junit/", "org/hamcrest/")
@@ -87,8 +87,14 @@ jobs:
       - name: Print metoprolol JSON example
         shell: bash
         run: |
-          java -jar metfrag-tools/target/streamfind-metfrag-fragmenter-0.1.0-SNAPSHOT.jar --smiles 'CC(C)NCC(COC1=CC=C(C=C1)CCOC)O' --depth 1 |
+          java -jar metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar --smiles 'CC(C)NCC(COC1=CC=C(C=C1)CCOC)O' --depth 1 |
             python -c 'import json,sys; d=json.load(sys.stdin); frags=d["fragments"]; assert frags and frags[0]["formula"] == "C15H25NO3"; d["fragment_count_total"]=len(frags); d["preview_truncated"]=len(frags)>5; d["fragments"]=frags[:5]; print("METOPROLOL_JSON_BEGIN"); print(json.dumps(d,indent=2)); print("METOPROLOL_JSON_END")'
+
+      - name: Validate explicit deuterium preservation
+        shell: bash
+        run: |
+          java -jar metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar --smiles '[2H]c1ccccc1' --depth 1 |
+            python -c 'import json,sys; d=json.load(sys.stdin); root=d["fragments"][0]; assert root["formula"] == "C6H5D", root; assert root["exact_mass"] > 79.0; assert any("D" in f["formula"] for f in d["fragments"]); print("validated isotope-aware formula", root["formula"])'
 
       - name: Upload runtime dependency SBOM
         uses: actions/upload-artifact@v7.0.1
