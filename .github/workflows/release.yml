@@ -6,7 +6,6 @@ on:
       version:
         description: Release version (without v)
         required: true
-        default: '0.2.0'
 
 permissions:
   contents: write
@@ -36,14 +35,25 @@ jobs:
         run: mvn -B clean install -pl MetFragLib -am -DskipTests
         working-directory: MetFragRelaunched
       - name: Build executable JAR and SBOM
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          mvn -B clean package org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release version must be semantic version x.y.z without a leading v"
+            exit 1
+          fi
+          mvn -B -Drevision="$RELEASE_VERSION" clean package org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom
+          jar="target/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
+          test -f "$jar"
+          unzip -p "$jar" "META-INF/maven/org.streamfind.tools/streamfind-metfrag-fragmenter/pom.properties" | grep -Fx "version=$RELEASE_VERSION"
         working-directory: streamfind-metfrag-tools/metfrag-tools
       - name: Smoke-test metoprolol
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
         shell: bash
         run: |
           set -euo pipefail
-          java -jar streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar \
+          java -jar "streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar" \
             --smiles 'CC(C)NCC(COC1=CC=C(C=C1)CCOC)O' --depth 1 |
             python -c 'import json,sys; d=json.load(sys.stdin); assert d["fragments"] and d["fragments"][0]["formula"] == "C15H25NO3"; assert all(f["exact_mass"] > 0 for f in d["fragments"]); print("Validated metoprolol:", len(d["fragments"]), "fragments")'
       - name: Assemble JAR and companion source package
@@ -53,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/source/streamfind-metfrag-tools dist/source/MetFragRelaunched dist/source/licenses
-          cp streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar "dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
+          cp "streamfind-metfrag-tools/metfrag-tools/target/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar" "dist/streamfind-metfrag-fragmenter-${RELEASE_VERSION}.jar"
           cp streamfind-metfrag-tools/LICENSE streamfind-metfrag-tools/README.md streamfind-metfrag-tools/THIRD_PARTY_NOTICES.md dist/source/streamfind-metfrag-tools/
           cp -R streamfind-metfrag-tools/metfrag-tools dist/source/streamfind-metfrag-tools/
           rm -rf dist/source/streamfind-metfrag-tools/metfrag-tools/target
