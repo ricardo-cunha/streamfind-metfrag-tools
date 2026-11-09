@@ -24,7 +24,7 @@ Then, from this directory:
 
 ```sh
 mvn clean package
-java -jar target/streamfind-metfrag-fragmenter-0.2.0-SNAPSHOT.jar --smiles "CCO" --depth 2
+java -jar target/streamfind-metfrag-fragmenter-0.3.0-SNAPSHOT.jar --smiles "CCO" --depth 2
 ```
 
 For a release build, pass the exact release version so Maven metadata, the JAR
@@ -35,7 +35,7 @@ mvn -Drevision=0.3.0 clean package
 java -jar target/streamfind-metfrag-fragmenter-0.3.0.jar --smiles "CCO" --depth 2
 ```
 
-The public [v0.2.0 release](https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/tag/v0.2.0) contains the self-contained JAR and a companion source/relink archive with the pinned MetFragRelaunched source, wrapper build materials, runtime SBOM, collected license/notice files, and checksums. For installation in StreamFind, place the JAR at `.streamfind/tools/metfrag/streamfind-metfrag-fragmenter.jar` or set `STREAMFIND_METFRAG_FRAGMENTER_JAR`. Java 21 is required and is not bundled in the JAR.
+The public [v0.3.0 release](https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/tag/v0.3.0) contains the self-contained JAR and a companion source/relink archive with the pinned MetFragRelaunched source, wrapper build materials, runtime SBOM, collected license/notice files, and checksums. For installation in StreamFind, place the JAR at `.streamfind/tools/metfrag/streamfind-metfrag-fragmenter.jar` or set `STREAMFIND_METFRAG_FRAGMENTER_JAR`. Java 21 is required and is not bundled in the JAR.
 
 ## JSON fields
 
@@ -49,4 +49,4 @@ Errors are JSON on standard output and return exit code 1; invalid CLI arguments
 
 ## Validation
 
-The [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions) builds/runs the CLI, checks parent references and JSON schema for ethanol, aspirin, vanillin, and metoprolol, and uploads a CycloneDX SBOM for runtime dependencies. The published v0.2.0 release includes the JAR and companion source/relink archive. The workflow's Maven SBOM license identifiers are documented in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md); those identifiers and collected texts should be checked against actual component terms before further redistribution. The latest run is linked from the repository README.
+The [Linux and Windows workflow](https://github.com/ricardo-cunha/streamfind-metfrag-tools/actions) builds/runs the CLI, checks parent references and JSON schema for ethanol, aspirin, vanillin, and metoprolol, and uploads a CycloneDX SBOM for runtime dependencies. The published v0.3.0 release includes the JAR and companion source/relink archive. The workflow's Maven SBOM license identifiers are documented in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md); those identifiers and collected texts should be checked against actual component terms before further redistribution. The latest run is linked from the repository README.

@@ -17,7 +17,7 @@
 
   <properties>
     <!-- Local development defaults to a snapshot; releases override this with -Drevision=x.y.z. -->
-    <revision>0.2.0-SNAPSHOT</revision>
+    <revision>0.3.0-SNAPSHOT</revision>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <metfrag.version>2.6.12-SNAPSHOT</metfrag.version>

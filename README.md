@@ -4,20 +4,20 @@ Standalone Java CLI tools built around MetFragLib. The first tool generates stru
 
 ## Install the released CLI
 
-The public [MetFrag Fragmenter v0.2.0 release](https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/tag/v0.2.0) provides a self-contained executable JAR, a companion source/relink archive, third-party notices, and SHA-256 checksums.
+The public [MetFrag Fragmenter v0.3.0 release](https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/tag/v0.3.0) provides a self-contained executable JAR, a companion source/relink archive, third-party notices, and SHA-256 checksums.
 
 Requirements: Java 21 or later. The JAR bundles its Java library dependencies; it does not bundle a Java runtime.
 
 Download the JAR:
 
 ```sh
-curl -fL -o streamfind-metfrag-fragmenter.jar https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/download/v0.2.0/streamfind-metfrag-fragmenter-0.2.0.jar
+curl -fL -o streamfind-metfrag-fragmenter.jar https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/download/v0.3.0/streamfind-metfrag-fragmenter-0.3.0.jar
 ```
 
 On Windows PowerShell:
 
 ```powershell
-Invoke-WebRequest -Uri "https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/download/v0.2.0/streamfind-metfrag-fragmenter-0.2.0.jar" -OutFile "streamfind-metfrag-fragmenter.jar"
+Invoke-WebRequest -Uri "https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/download/v0.3.0/streamfind-metfrag-fragmenter-0.3.0.jar" -OutFile "streamfind-metfrag-fragmenter.jar"
 ```
 
 Run it directly:

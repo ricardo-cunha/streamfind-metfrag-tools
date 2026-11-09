@@ -38,7 +38,7 @@ That license statement resolves the basic MetFrag license identification. It doe
 - CycloneDX Maven Plugin for the runtime SBOM
 - GitHub Actions for Ubuntu and Windows build/run checks
 
-The public [v0.2.0 release](https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/tag/v0.2.0) contains the executable JAR, pinned MetFragRelaunched source and wrapper build materials for relinking, collected dependency license/notice files, the runtime SBOM, and checksums. The Linux and Windows CI jobs completed successfully. The runtime SBOM records license metadata for resolved components; the MetFragLib entry itself is marked `unspecified`, while the official MetFrag project page states LGPL-2.1-or-later. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the release inventory and limitations of the metadata review.
+The public [v0.3.0 release](https://github.com/ricardo-cunha/streamfind-metfrag-tools/releases/tag/v0.3.0) contains the executable JAR, pinned MetFragRelaunched source and wrapper build materials for relinking, collected dependency license/notice files, the runtime SBOM, and checksums. The Linux and Windows CI jobs completed successfully. The runtime SBOM records license metadata for resolved components; the MetFragLib entry itself is marked `unspecified`, while the official MetFrag project page states LGPL-2.1-or-later. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the release inventory and limitations of the metadata review.
 
 ## Remaining validation
 
